@@ -5,22 +5,58 @@ import math
 
 lines = []
 
-X = 0;
-Y = 0;
-Z = 0;
-
+x = 110;
+y = 110;
+z = 0;
+e = 0;
 
 for line in fileinput.input():
     line = line[:-1]
+    if line == 'G92 E0':
+        olde = e = 0
     if line[0:3] == 'G1 ':
-        if 'X' in line:
-            X = float(line.split('X')[1].replace(';', ' ').split(' ')[0])
-        if 'Y' in line:
-            Y = float(line.split('Y')[1].replace(';', ' ').split(' ')[0])
-        if 'Z' in line:
-            (pre, z) = line.split('Z')
-            (z, post) = z.split(' ')
-            Z = float(z)
+        oldy = y
+        oldx = x
+        olde = e
+        if 'E' in line:
+            (pre, e) = line.split('E', 1)
+            e += ' '
+            (e, post) = e.replace(';',' ;').split(' ', 1)
+            e = float(e)
             line = pre + post
-        line += " Z%f" % (Z + math.sin((X-110) * math.pi + math.pi/2) * .25 + math.sin((Y-110) * math.pi + math.pi/2) * .25)
-    print(line)
+        if 'X' in line:
+            (pre, x) = line.split('X', 1)
+            (x, post) = x.replace(';',' ;').split(' ', 1)
+            x = float(x)
+            line = pre + post
+        if 'Y' in line:
+            (pre, y) = line.split('Y', 1)
+            (y, post) = y.replace(';',' ;').split(' ', 1)
+            y = float(y)
+            line = pre + post
+        if 'Z' in line:
+            (pre, z) = line.split('Z', 1)
+            (z, post) = z.replace(';',' ;').split(' ', 1)
+            z = float(z)
+            line = pre + post
+        len = math.hypot(x - oldx, y - oldy)
+        steps = max(1, math.ceil(len))
+        for i in range(steps):
+            subx = oldx + (x - oldx) / steps * (i + 1)
+            suby = oldy + (y - oldy) / steps * (i + 1)
+            print(
+                (line +
+                " X%f Y%f Z%f E%f" % (
+                    subx,
+                    suby,
+                    max(
+                        0,
+                        z +
+                        math.sin((subx-110) * math.pi + math.pi/2) * .25 +
+                        math.sin((suby-110) * math.pi + math.pi/2) * .25
+                    ),
+                    olde + (e - olde) / steps * (i + 1)
+                )).replace('  ',' ')
+            )
+    else:
+        print(line)
